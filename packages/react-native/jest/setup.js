@@ -14,7 +14,7 @@ const mockComponent = jest.requireActual('./mockComponent');
 
 jest.requireActual('@react-native/js-polyfills/error-guard');
 
-Object.defineProperties(global, {
+const globalObj = {
   __DEV__: {
     configurable: true,
     enumerable: true,
@@ -33,14 +33,6 @@ Object.defineProperties(global, {
     value: {},
     writable: true,
   },
-  performance: {
-    configurable: true,
-    enumerable: true,
-    value: {
-      now: jest.fn(Date.now),
-    },
-    writable: true,
-  },
   regeneratorRuntime: {
     configurable: true,
     enumerable: true,
@@ -53,13 +45,30 @@ Object.defineProperties(global, {
     value: callback => setTimeout(() => callback(jest.now()), 0),
     writable: true,
   },
-  window: {
+};
+
+// #36440: We don't always need to polyfill these globals
+if (global.window === undefined) {
+  globalObj.window = {
     configurable: true,
     enumerable: true,
     value: global,
     writable: true,
-  },
-});
+  };
+}
+
+if (global.performance === undefined) {
+  globalObj.performance = {
+    configurable: true,
+    enumerable: true,
+    value: {
+      now: jest.fn(Date.now),
+    },
+    writable: true,
+  };
+}
+
+Object.defineProperties(global, globalObj);
 
 jest
   .mock('../Libraries/Core/InitializeCore', () => {})
